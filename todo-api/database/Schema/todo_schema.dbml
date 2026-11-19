@@ -1,0 +1,51 @@
+// TODO API database schema
+// Source of truth for table structure; generate versioned SQL migrations from this file.
+
+Enum todo_audit_action {
+  CREATED
+  UPDATED
+  DELETED
+  ARCHIVED
+  RESTORED
+  STATUS_CHANGED
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(100) [not null]
+  email varchar(255) [not null, unique]
+  created_at datetime [not null, default: `now()`]
+}
+
+Table todos {
+  id bigint [pk, increment]
+  title varchar(255) [not null]
+  description text
+  completed boolean [not null, default: false]
+  is_archived boolean [not null, default: false]
+  created_at datetime [not null, default: `now()`]
+  // Set this to CURRENT_TIMESTAMP on insert and update in the MySQL migration,
+  // or update it explicitly in application code whenever a TODO changes.
+  updated_at datetime [not null, default: `now()`]
+
+  indexes {
+    (is_archived, created_at) [name: 'idx_todos_archived_created']
+    (is_archived, completed) [name: 'idx_todos_archived_completed']
+  }
+}
+
+Table todo_audit_logs {
+  id bigint [pk, increment]
+  todo_id bigint [not null, note: 'Original TODO ID retained after deletion; intentionally no foreign key to todos']
+  user_id bigint [not null]
+  action todo_audit_action [not null]
+  created_at datetime [not null, default: `now()`]
+
+  indexes {
+    (todo_id, created_at) [name: 'idx_audit_todo_created']
+    user_id [name: 'idx_audit_user']
+  }
+}
+
+// Keep audit records associated with an existing user. No cascading delete.
+Ref: todo_audit_logs.user_id > users.id [delete: restrict, update: cascade]

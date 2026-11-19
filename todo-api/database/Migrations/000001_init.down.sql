@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS todo_audit_logs;
+DROP TABLE IF EXISTS todos;
+DROP TABLE IF EXISTS users;
